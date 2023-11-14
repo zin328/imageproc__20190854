@@ -51,6 +51,9 @@ ON_COMMAND(ID_MOPOLOGYOPENNING, &Cimageproc20190854View::OnMopologyopenning)
 ON_COMMAND(ID_MOPOLOGYCLOSING, &Cimageproc20190854View::OnMopologyclosing)
 ON_COMMAND(ID_GEOMETRY_ZOOMIN_BINUERINTERPOLATION, &Cimageproc20190854View::OnGeometryZoominBinuerinterpolation)
 ON_COMMAND(ID_GEOMETRY_ZOOMOUT_SUBSAMPLING, &Cimageproc20190854View::OnGeometryZoomoutSubsampling)
+ON_COMMAND(ID_GEOMETRY_ZOOMOUT_MEAN_SUB, &Cimageproc20190854View::OnGeometryZoomoutMeanSub)
+ON_COMMAND(ID_GEOMETRY_ZOOMOUT_AVG, &Cimageproc20190854View::OnGeometryZoomoutAvg)
+ON_COMMAND(ID_GEOMETRY_ROTATION, &Cimageproc20190854View::OnGeometryRotation)
 END_MESSAGE_MAP()
 
 // Cimageproc20190854View 생성/소멸
@@ -1138,16 +1141,20 @@ void Cimageproc20190854View::OnGeometryZoominBinuerinterpolation()
 	for (i = 0; i < pDoc->gImageHeight; i++) {
 		pDoc->gresultimg[i] = (unsigned char*)malloc(pDoc->gImageWidth * pDoc->depth);
 	}
+	//역방향 
 	for (y = 0; y < pDoc->gImageHeight; y++) {
 		for (x = 0; x < pDoc->gImageWidth; x++) 
 		{
 			src_x = x / xscale;
 			src_y = y / yscale;
+			/*
 			alpha = src_x - (int)src_x;
-			beta  =	src_y	 - (int)src_y;
+			beta  =	src_y	 - (int)src_y;*/
 
-			Ax = (int)src_x;
-			Ay = (int)src_y;
+			/*Ax = (int)src_x;
+			Ay = (int)src_y;*/
+			Ax = src_x;
+			Ay = src_y;
 			Bx = Ax + 1;
 			By = Ay;
 			Cx = Ax;
@@ -1206,8 +1213,8 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 		for (i = 0; i < pDoc->gImageHeight; i++) free(pDoc->gresultimg[i]);
 		free(pDoc->gresultimg);
 	}
-	pDoc->gImageWidth = (pDoc->ImageWidth) /xscale;
-	pDoc->gImageHeight = (pDoc->ImageHeight )/ yscale;
+	pDoc->gImageWidth = (pDoc->ImageWidth) / xscale;
+	pDoc->gImageHeight = (pDoc->ImageHeight) / yscale;
 
 
 	//메모리 할당
@@ -1220,7 +1227,7 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 	for (y = 0; y < pDoc->gImageHeight; y++) {
 		for (x = 0; x < pDoc->gImageWidth; x++)
 		{
-			if(pDoc->depth==1)
+			if (pDoc->depth == 1)
 				pDoc->gresultimg[y][x] = pDoc->inputimg[y * yscale][x * xscale];
 			else {
 				pDoc->gresultimg[y][3 * x + 0] = pDoc->inputimg[y * yscale][3 * (x * xscale) + 0];
@@ -1231,4 +1238,150 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 		}
 		Invalidate();
 
+	}
 }
+
+
+	void Cimageproc20190854View::OnGeometryZoomoutMeanSub()
+	{
+		OnRegionSmoothing();
+		CopyResultToInput();
+		OnGeometryZoomoutSubsampling();
+	}
+
+
+	void Cimageproc20190854View::OnGeometryZoomoutAvg()
+	{
+		Cimageproc20190854Doc* pDoc = GetDocument();
+		int x, y, i, j;
+		int src_x, src_y;
+		int sum;
+		int rsum, gsum, bsum;
+
+		int xscale = 3;
+		int yscale = 2;
+
+		if (pDoc->gresultimg != NULL) {
+			for (i = 0; i < pDoc->gImageHeight; i++) free(pDoc->gresultimg[i]);
+			free(pDoc->gresultimg);
+		}
+
+		pDoc->gImageWidth = pDoc->ImageWidth / xscale;
+		pDoc->gImageHeight = pDoc->ImageHeight / yscale;
+		//메모리 할당
+		pDoc->gresultimg = (unsigned char**)malloc(pDoc->gImageHeight * sizeof(unsigned char*));
+		for (i = 0; i < pDoc->gImageHeight; i++) {
+			pDoc->gresultimg[i] = (unsigned char*)malloc(pDoc->gImageWidth * pDoc->depth);
+		}
+
+		//전방향 사상
+		for (y = 0; y < pDoc->ImageHeight - yscale; y += yscale) {
+			for (x = 0; x < pDoc->ImageWidth - xscale; x += xscale) {
+				if (pDoc->depth == 1) {
+					sum = 0;
+					for (j = 0; j < yscale; j++) {
+						for (i = 0; i < xscale; i++) {
+							src_x = x + i;
+							src_y = y + j;
+							sum += pDoc->inputimg[src_y][src_x];
+						}
+					}
+					pDoc->gresultimg[y / yscale][x / xscale] = sum / (xscale * yscale);
+				}
+				else {
+					rsum = gsum = bsum = 0;
+					for (j = 0; j < yscale; j++) {
+						for (i = 0; i < xscale; i++) {
+							src_x = x + i;
+							src_y = y + j;
+							rsum += pDoc->inputimg[src_y][3 * src_x + 0];
+							gsum += pDoc->inputimg[src_y][3 * src_x + 1];
+							bsum += pDoc->inputimg[src_y][3 * src_x + 2];
+						}
+					}
+					pDoc->gresultimg[y / yscale][3 * (x / xscale)  + 0] = rsum / (xscale * yscale);
+					pDoc->gresultimg[y / yscale][3 * (x / xscale)  + 1] = gsum / (xscale * yscale);
+					pDoc->gresultimg[y / yscale][3 * (x / xscale)  + 2] = bsum / (xscale * yscale);
+				}
+			}
+		}
+
+		Invalidate();
+	
+	}
+
+#define PI 3.1415926521
+	void Cimageproc20190854View::OnGeometryRotation()
+	{
+		Cimageproc20190854Doc* pDoc = GetDocument();
+		int x, y, i, j;
+
+		int angle = 30; //degree
+		float radian;
+		int Cx, Cy, Oy;
+		int xdiff, ydiff;
+		int x_source, y_source;
+		if (pDoc->gresultimg != NULL) {
+			for (i = 0; i < pDoc->gImageHeight; i++) free(pDoc->gresultimg[i]);
+			free(pDoc->gresultimg);
+		}
+		radian = 2 * PI / 360 * angle;
+		pDoc->gImageWidth = pDoc->ImageHeight * fabs(cos(PI / 2 - radian)) + pDoc->ImageWidth * fabs(cos(radian));
+		pDoc->gImageHeight = pDoc->ImageHeight * fabs(cos(radian)) + pDoc->ImageWidth * fabs(cos(PI / 2 - radian));
+
+		//메모리 할당
+		pDoc->gresultimg = (unsigned char**)malloc(pDoc->gImageHeight * sizeof(unsigned char*));
+		for (i = 0; i < pDoc->gImageHeight; i++) {
+			pDoc->gresultimg[i] = (unsigned char*)malloc(pDoc->gImageWidth * pDoc->depth);
+		}
+		Cx = pDoc->ImageWidth / 2;
+		Cy = pDoc->ImageHeight / 2;
+		Oy = pDoc->ImageHeight - 1;
+
+		xdiff = (pDoc->gImageWidth - pDoc->ImageWidth) / 2;
+		ydiff = (pDoc->gImageHeight - pDoc->ImageHeight) / 2;
+
+
+
+
+		if (pDoc->depth == 1) {
+
+
+			for (y = -ydiff; y < pDoc->gImageHeight - ydiff; y++)
+				for (x = -xdiff; x < pDoc->gImageWidth - xdiff; x++) {
+					x_source = ((Oy - y) - Cy) * sin(radian) + (x - Cx) * cos(radian) + Cx;
+					y_source = Oy - (((Oy - y) - Cy) * cos(radian) - (x - Cx) * sin(radian) + Cy);
+
+					y_source = Oy - y_source;
+
+					if (x_source < 0 || x_source > pDoc->ImageWidth - 1 ||
+						y_source < 0 || y_source > pDoc->ImageHeight - 1)
+					{
+						pDoc->gresultimg[y + ydiff][x + xdiff] = 255;
+					}
+					else {
+						pDoc->gresultimg[y + ydiff][x + xdiff] = pDoc->inputimg[y_source][x_source];
+					}
+				}
+		else {
+			if (x_source < 0 || x_source > pDoc->ImageWidth - 1 ||
+				y_source < 0 || y_source > pDoc->ImageHeight - 1) {
+				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 0] = 255;
+				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 1] = 255;
+				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 2] = 255;
+			}
+			else {
+				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 0] = pDoc->inputimg[y_source][3 * x_source + 0];
+				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 1] = pDoc->inputimg[y_source][3 * x_source + 1];
+				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 2] = pDoc->inputimg[y_source][3 * x_source + 2];
+			}
+		
+		}
+	}
+		
+	Invalidate();
+	}
+	}
+	
+	
+	
