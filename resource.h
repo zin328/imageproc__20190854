@@ -7,6 +7,8 @@
 #define IDR_MAINFRAME                   128
 #define IDR_imageproc20190854TYPE       130
 #define ID_WINDOW_MANAGER               131
+#define IDD_DIALOG1                     310
+#define IDC_EDIT_ANGLE                  1003
 #define ID_32771                        32771
 #define ID_MENUTEST                     32772
 #define ID_32773                        32773
@@ -86,14 +88,24 @@
 #define ID_32847                        32847
 #define ID_GEOMETRY_LOTATION            32848
 #define ID_GEOMETRY_ROTATION            32849
+#define ID_32850                        32850
+#define ID_32851                        32851
+#define ID_GEOMETRY_FLIP_               32852
+#define ID_GEOMETRY_MIRROR              32853
+#define ID_GEOMETRY_FLIP                32854
+#define ID_32855                        32855
+#define ID_GEOMETRY_MORPING             32856
+#define ID_GEOMETRY_WARRPING            32857
+#define ID_32858                        32858
+#define ID_GEOMETRY_WARPING             32859
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        310
-#define _APS_NEXT_COMMAND_VALUE         32850
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_RESOURCE_VALUE        313
+#define _APS_NEXT_COMMAND_VALUE         32860
+#define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
 #endif

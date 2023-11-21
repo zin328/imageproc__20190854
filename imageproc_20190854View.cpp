@@ -12,6 +12,7 @@
 
 #include "imageproc_20190854Doc.h"
 #include "imageproc_20190854View.h"
+#include "CAngleinputDialog.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -54,6 +55,10 @@ ON_COMMAND(ID_GEOMETRY_ZOOMOUT_SUBSAMPLING, &Cimageproc20190854View::OnGeometryZ
 ON_COMMAND(ID_GEOMETRY_ZOOMOUT_MEAN_SUB, &Cimageproc20190854View::OnGeometryZoomoutMeanSub)
 ON_COMMAND(ID_GEOMETRY_ZOOMOUT_AVG, &Cimageproc20190854View::OnGeometryZoomoutAvg)
 ON_COMMAND(ID_GEOMETRY_ROTATION, &Cimageproc20190854View::OnGeometryRotation)
+ON_COMMAND(ID_GEOMETRY_MIRROR, &Cimageproc20190854View::OnGeometryMirror)
+ON_COMMAND(ID_GEOMETRY_FLIP, &Cimageproc20190854View::OnGeometryFlip)
+//ON_COMMAND(ID_GEOMETRY_WARRPING, &Cimageproc20190854View::OnGeometryWarrping)
+ON_COMMAND(ID_GEOMETRY_WARPING, &Cimageproc20190854View::OnGeometryWarping)
 END_MESSAGE_MAP()
 
 // Cimageproc20190854View 생성/소멸
@@ -1314,13 +1319,21 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 	void Cimageproc20190854View::OnGeometryRotation()
 	{
 		Cimageproc20190854Doc* pDoc = GetDocument();
-		int x, y, i, j;
 
+		CAngleinputDialog dlg;
+
+
+		int x, y, i, j;
 		int angle = 30; //degree
 		float radian;
 		int Cx, Cy, Oy;
 		int xdiff, ydiff;
 		int x_source, y_source;
+
+		dlg.m_iAngle = angle;
+		if (dlg.DoModal() == IDCANCEL) return;
+		angle = dlg.m_iAngle;
+
 		if (pDoc->gresultimg != NULL) {
 			for (i = 0; i < pDoc->gImageHeight; i++) free(pDoc->gresultimg[i]);
 			free(pDoc->gresultimg);
@@ -1352,7 +1365,7 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 					x_source = ((Oy - y) - Cy) * sin(radian) + (x - Cx) * cos(radian) + Cx;
 					y_source = Oy - (((Oy - y) - Cy) * cos(radian) - (x - Cx) * sin(radian) + Cy);
 
-					y_source = Oy - y_source;
+				
 
 					if (x_source < 0 || x_source > pDoc->ImageWidth - 1 ||
 						y_source < 0 || y_source > pDoc->ImageHeight - 1)
@@ -1363,7 +1376,8 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 						pDoc->gresultimg[y + ydiff][x + xdiff] = pDoc->inputimg[y_source][x_source];
 					}
 				}
-		else {
+		}
+					else {
 			if (x_source < 0 || x_source > pDoc->ImageWidth - 1 ||
 				y_source < 0 || y_source > pDoc->ImageHeight - 1) {
 				pDoc->gresultimg[y + ydiff][3 * (x + xdiff) + 0] = 255;
@@ -1377,11 +1391,181 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 			}
 		
 		}
+		Invalidate();
 	}
 		
-	Invalidate();
+	
+
+	
+	
+	
+	
+
+
+	void Cimageproc20190854View::OnGeometryMirror()
+	{
+		Cimageproc20190854Doc* pDoc = GetDocument(); 
+
+		int x, y;
+
+		for (y = 0; y < pDoc->ImageHeight; y++) {
+			for (x = 0; x < pDoc->ImageWidth; x++) {
+				if (pDoc->depth == 1) {
+					pDoc->resultimg[y][x] = pDoc->inputimg[y][pDoc->ImageWidth - 1 - x];
+
+				}
+				else {
+					pDoc->resultimg[y][3 * x + 0] = pDoc->inputimg[y][3 * (pDoc->ImageWidth - 1 - x) + 0];
+					pDoc->resultimg[y][3 * x + 1] = pDoc->inputimg[y][3 * (pDoc->ImageWidth - 1 - x) + 1];
+					pDoc->resultimg[y][3 * x + 2] = pDoc->inputimg[y][3 * (pDoc->ImageWidth - 1 - x) + 2];
+				}
+			}
+		}
+				Invalidate();
+			
+		}
+	void Cimageproc20190854View::OnGeometryFlip()
+	
+	{
+		Cimageproc20190854Doc* pDoc = GetDocument(); 
+		int x, y;
+
+		for (y = 0; y < pDoc->ImageHeight; y++) {
+			for (x = 0; x < pDoc->ImageWidth; x++) {
+				if (pDoc->depth == 1) {
+					pDoc->resultimg[y][x] = pDoc->inputimg[pDoc->ImageHeight-1-y][x]; 
+
+				}
+				else {
+					pDoc->resultimg[y][3 * x + 0] = pDoc->inputimg[pDoc->ImageHeight - 1 - y][3 *x + 0];
+					pDoc->resultimg[y][3 * x + 1] = pDoc->inputimg[pDoc->ImageHeight - 1 - y][3 * x+ 1];
+					pDoc->resultimg[y][3 * x + 2] = pDoc->inputimg[pDoc->ImageHeight - 1 - y][3 * x + 2];
+				}
+			}
+		}
+		Invalidate();
 	}
+
+	typedef struct 
+	{
+		int Px;
+		int Py;
+		int Qx;
+		int Qy;
+	}control_line;
+
+
+	/*void Cimageproc20190854View::OnGeometryWarrping()
+	{
+		Cimageproc20190854Doc* pDoc = GetDocument();
+
+		control_line source;
+	}*/
+
+
+	void Cimageproc20190854View::OnGeometryWarping()
+	{
+		Cimageproc20190854Doc* pDoc = GetDocument();
+
+		control_line source_lines[5] = { (100, 100, 150, 150), 
+			(0, 0, pDoc->ImageWidth - 1, 0),
+			(pDoc->ImageWidth - 1,0, pDoc->ImageHeight - 1, 0), 
+			(pDoc->ImageWidth - 1, pDoc->ImageHeight - 1, 0,  pDoc->ImageHeight - 1),
+			(0,  pDoc->ImageHeight - 1, 0, 0) };
+
+		control_line dest_lines[5] = { (100, 100, 200, 200),
+			(0, 0, pDoc->ImageWidth - 1, 0),
+			(pDoc->ImageWidth - 1,0, pDoc->ImageHeight - 1, 0),
+			(pDoc->ImageWidth - 1, pDoc->ImageHeight - 1, 0,  pDoc->ImageHeight - 1),
+			(0,  pDoc->ImageHeight - 1, 0, 0) };
+
+		int x, y;
+
+		double u; 
+		double h; 
+		double d; 
+		double tx, ty; 
+		double xp, yp; 
+
+		double weight;
+		double totalWeight; 
+		double  a = 0.001;
+		double	b = 2.0;
+		double	p = 0.75;
+
+		int x1, x2, y1,y2; 
+		int src_x1, src_x2, src_y1, src_y2;
+		double src_line_length, dest_line_length;
+
+		int num_lines = 5;
+		int line;
+		int source_x, source_y;
+		int last_row, last_col;
+
+		last_row = pDoc->ImageHeight - 1;
+		last_col = pDoc->ImageWidth - 1;
+
+		for (y = 0; y < pDoc->ImageHeight; y++) {
+			for (x = 0; x < pDoc->ImageWidth; x++)
+			{
+				tx = 0.0;
+				ty = 0.0;
+				totalWeight = 0.0;
+				// 각 제어선의 영향을 계산
+				for (line = 0; line < num_lines; line++) {
+					x1 = dest_lines[line].Px;
+					y1 = dest_lines[line].Py;
+					x2 = dest_lines[line].Qx;
+					y2 = dest_lines[line].Qy;
+
+					dest_line_length = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+
+					u = (double)((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1))
+						/ (double)((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+					h = ((y - y1) * (x2 - x1) - (x - x1) * (y2 - y1)) / dest_line_length;
+
+					if (u < 0)
+						d = sqrt((x - x1) * (x - x1) + (y - y1) * (y - y1));
+					else if (u > 1)
+						d = sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2));
+					else
+						d = fabs(h);
+
+
+					src_x1 = source_lines[line].Px;
+					src_y1 = source_lines[line].Py;
+					src_x2 = source_lines[line].Qx;
+					src_y2 = source_lines[line].Qy;
+
+					src_line_length = sqrt((src_x2 - src_x1) * (src_x2 - src_x1) + (src_y2 - src_y1) * (src_y2 - src_y1));
+					xp = src_x1 + u * (src_x2 - src_x1) - h * (src_y2 - src_y1) / src_line_length;
+					yp = src_y1 + u * (src_y2 - src_y1) + h * (src_x2 - src_x1) / src_line_length;
+
+					weight = pow(pow(dest_line_length, p) / (a + d), b);
+
+					tx += (xp - x) * weight;
+					ty += (yp - y) * weight;
+					totalWeight += weight;
+				}
+				source_x = x + tx / totalWeight;
+				source_y = y + ty / totalWeight;
+
+				if (source_x < 0) source_x = 0;
+				else if (source_x > last_col) source_x = last_col;
+				if (source_y < 0) source_y = 0;
+				else if (source_y > last_row) source_y = last_row;
+
+				if (pDoc->depth == 1) {
+					pDoc->resultimg[y][x] = pDoc->inputimg[source_y][source_x];
+				}
+				else {
+					pDoc->resultimg[y][3 * x + 0] = pDoc->inputimg[source_y][3 * source_x + 0];
+					pDoc->resultimg[y][3 * x + 1] = pDoc->inputimg[source_y][3 * source_x + 1];
+					pDoc->resultimg[y][3 * x + 2] = pDoc->inputimg[source_y][3 * source_x + 2];
+
+				}
+			}
+		}
+			Invalidate();
+
 	}
-	
-	
-	
