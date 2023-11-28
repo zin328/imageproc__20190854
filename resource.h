@@ -98,13 +98,16 @@
 #define ID_GEOMETRY_WARRPING            32857
 #define ID_32858                        32858
 #define ID_GEOMETRY_WARPING             32859
+#define ID_32860                        32860
+#define ID_AVI32861                     32861
+#define ID_AVI_VIEW                     32862
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        313
-#define _APS_NEXT_COMMAND_VALUE         32860
+#define _APS_NEXT_COMMAND_VALUE         32863
 #define _APS_NEXT_CONTROL_VALUE         1004
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

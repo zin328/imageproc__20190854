@@ -145,6 +145,9 @@ protected:
 // 구현입니다.
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+//	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+//	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 };
 
 CAboutDlg::CAboutDlg() noexcept : CDialogEx(IDD_ABOUTBOX)
@@ -157,6 +160,8 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
+//	ON_WM_LBUTTONDOWN()
+//	ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 // 대화 상자를 실행하기 위한 응용 프로그램 명령입니다.
@@ -167,6 +172,8 @@ void Cimageproc20190854App::OnAppAbout()
 }
 
 // Cimageproc20190854App 메시지 처리기
+
+
 
 
 
