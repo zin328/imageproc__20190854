@@ -59,7 +59,10 @@ public:
 	int gImageWidth;
 	int gImageHeight;
 	unsigned char** gresultimg; //[y][x]
+	unsigned char** morhedImg[10];
+
 
 	int LoadImageFile();
 	void LoadSecondImageFile();
+	
 };

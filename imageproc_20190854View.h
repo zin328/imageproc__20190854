@@ -84,6 +84,7 @@ public:
 	bool bAviMode;
 	CString AviFileName;
 	void LoadAviFile(CDC* PDC);
+	afx_msg void OnGeometryMorphing();
 };
 
 #ifndef _DEBUG  // imageproc_20190854View.cpp의 디버그 버전

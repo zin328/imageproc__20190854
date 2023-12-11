@@ -171,52 +171,109 @@ void Cimageproc20190854Doc::Dump(CDumpContext& dc) const
 // Cimageproc20190854Doc 명령
 int Cimageproc20190854Doc::LoadImageFile(CArchive& ar)
 {
-	{
-		int maxValue, i;
-		char type[16], buf[256];
-		CFile* fp = ar.GetFile();
-		CString fname = fp->GetFilePath();
+	int maxValue, i;
+	char type[16], buf[256];
+	CFile* fp = ar.GetFile();
+	CString fname = fp->GetFilePath();
+	bool isbmp = false;
 
-		//strcmp(strchr(fname, '.'), ".ppm");	// == 0 => 확장자가 ppm
-		if (!strcmp(strchr(fname, '.'), ".ppm") || !strcmp(strchr(fname, '.'), ".PPM") ||
-			!strcmp(strchr(fname, '.'), ".pgm") || !strcmp(strchr(fname, '.'), ".PGM")) {
+	//strcmp(strchr(fname, '.'), ".ppm");	// == 0 => 확장자가 ppm
+	if (!strcmp(strchr(fname, '.'), ".ppm") || !strcmp(strchr(fname, '.'), ".PPM") ||
+		!strcmp(strchr(fname, '.'), ".pgm") || !strcmp(strchr(fname, '.'), ".PGM")) {
 
-			ar.ReadString(type, 15);
+		ar.ReadString(type, 15);
 
-			do {
-				ar.ReadString(buf, 255);
-			} while (buf[0] == '#');
-			sscanf(buf, "%d %d", &ImageWidth, &ImageHeight);
+		do {
+			ar.ReadString(buf, 255);
+		} while (buf[0] == '#');
+		sscanf(buf, "%d %d", &ImageWidth, &ImageHeight);
 
-			do {
-				ar.ReadString(buf, 255);
-			} while (buf[0] == '#');
-			sscanf(buf, "%d", &maxValue);
+		do {
+			ar.ReadString(buf, 255);
+		} while (buf[0] == '#');
+		sscanf(buf, "%d", &maxValue);
 
-			if (!strcmp(type, "P5")) depth = 1;
-			else depth = 3;
+		if (!strcmp(type, "P5")) depth = 1;
+		else depth = 3;
+	}
+	else if (!strcmp(strchr(fname, '.'), ".raw") || !strcmp(strchr(fname, '.'), ".RAW")) {
+		ImageWidth = 256;
+		ImageHeight = 256;
+		depth = 1;
+	}
+	else if (!strcmp(strchr(fname, '.'), ".bmp") || !strcmp(strchr(fname, '.'), ".BMP")) {
+		//bmp파일은 4의 배수 단위로 처리되어야 함
+		//rgb가 아니라 bgr
+
+		//bitmap file 읽기
+		BITMAPFILEHEADER bmfh;
+		ar.Read(&bmfh, sizeof(bmfh));	//전체 바이트 수 계산 후 저장
+
+		//bmp파일임을 나타내는"BM" 마커가 있는지 확인
+		if (bmfh.bfType != (WORD)(('M' << 8) | 'B'))
+			return 0;
+
+		//bitmap info 읽기
+		BITMAPINFOHEADER bih;
+		ar.Read(&bih, sizeof(bih));	
+
+		ImageWidth = bih.biWidth;
+		ImageHeight = bih.biHeight;
+		depth = bih.biBitCount / 8; 
+
+		if (depth == 1) {
+			// palette 존재
+			BYTE palette[256 * 4];	
+			ar.Read(palette, 256 * 4);
 		}
-		else if (!strcmp(strchr(fname, '.'), ".raw") || !strcmp(strchr(fname, '.'), ".RAW")) {
-			ImageWidth = 256;
-			ImageHeight = 256;
-			depth = 1;
-		}
+		isbmp = true;
+	}
 
-		//메모리 할당
-		inputimg = (unsigned char**)malloc(ImageHeight * sizeof(unsigned char*));
-		resultimg = (unsigned char**)malloc(ImageHeight * sizeof(unsigned char*));
-		for (i = 0; i < ImageHeight; i++) {
-			inputimg[i] = (unsigned char*)malloc(ImageWidth * depth);
-			resultimg[i] = (unsigned char*)malloc(ImageWidth * depth);
-		}
+	//메모리 할당
+	inputimg = (unsigned char**)malloc(ImageHeight * sizeof(unsigned char*));
+	resultimg = (unsigned char**)malloc(ImageHeight * sizeof(unsigned char*));
+	for (i = 0; i < ImageHeight; i++) {
+		inputimg[i] = (unsigned char*)malloc(ImageWidth * depth);
+		resultimg[i] = (unsigned char*)malloc(ImageWidth * depth);
+	}
 
-		//파일에서 읽어서 저장
+	//파일에서 읽어서 저장
+	if (!isbmp) {
 		for (i = 0; i < ImageHeight; i++)
 			ar.Read(inputimg[i], ImageWidth * depth);
-
-		return 0;
 	}
+	else {
+		BYTE nu[4];
+		int widthfile;
+
+		widthfile = (ImageWidth * 8 + 31) / 32 * 4;	
+
+		for (i = 0; i < ImageHeight; i++) {
+			if (depth == 1)
+				ar.Read(inputimg[ImageHeight - 1 - i], ImageWidth * depth);	
+			else {
+				for (int j = 0; j < ImageWidth; j++) {
+					BYTE b, g, r;
+					ar.Read(&b, 1);
+					ar.Read(&g, 1);
+					ar.Read(&r, 1);
+					inputimg[ImageHeight - 1 - i][3 * j + 0] = r;
+					inputimg[ImageHeight - 1 - i][3 * j + 1] = g;
+					inputimg[ImageHeight - 1 - i][3 * j + 2] = b;
+				}
+			}
+
+			if (widthfile - ImageWidth != 0) {
+				ar.Read(nu, (widthfile - ImageWidth) * depth);
+			}
+		}
+	}
+
+	return 0;
 }
+
+
+
 
 
 void Cimageproc20190854Doc::LoadSecondImageFile(CArchive& ar)
@@ -226,6 +283,7 @@ void Cimageproc20190854Doc::LoadSecondImageFile(CArchive& ar)
 	char type[16], buf[256];
 	CFile* fp = ar.GetFile();
 	CString fname = fp->GetFilePath();
+	bool isbmp = false;
 
 	if (!strcmp(strchr(fname, '.'), ".ppm") || !strcmp(strchr(fname, '.'), ".PPM") ||
 		!strcmp(strchr(fname, '.'), ".pgm") || !strcmp(strchr(fname, '.'), ".PGM")) {
@@ -250,6 +308,33 @@ void Cimageproc20190854Doc::LoadSecondImageFile(CArchive& ar)
 		h = 256;
 		d = 1;
 	}
+	else if (!strcmp(strchr(fname, '.'), ".bmp") || !strcmp(strchr(fname, '.'), ".BMP")) {
+		//bmp파일은 4의 배수 단위로 처리되어야 함
+		//rgb가 아니라 bgr
+
+		//bitmap file 읽기
+		BITMAPFILEHEADER bmfh;
+		ar.Read(&bmfh, sizeof(bmfh));	//전체 바이트 수 계산 후 저장
+
+		//bmp파일임을 나타내는"BM" 마커가 있는지 확인
+		if (bmfh.bfType != (WORD)(('M' << 8) | 'B'))
+			return;
+
+		//bitmap info 읽기
+		BITMAPINFOHEADER bih;
+		ar.Read(&bih, sizeof(bih));	//구조체의 시작 번지, 구조체의 크기
+
+		w = bih.biWidth;
+		h = bih.biHeight;
+		d = bih.biBitCount / 8; //비트 수로 이루어져있디때문에 바이프로 바꿔주려고 (/ 8) 해줌
+
+		if (depth == 1) {
+			// palette 존재
+			BYTE palette[256 * 4];	//흑백이니까 (* 4)
+			ar.Read(palette, 256 * 4);
+		}
+		isbmp = true;
+	}
 
 	if (ImageWidth != w || ImageHeight != h || depth != d) {
 		AfxMessageBox("두번째 파일의 width,height,depth가 다르면 읽을 수 없습니다.");
@@ -263,8 +348,36 @@ void Cimageproc20190854Doc::LoadSecondImageFile(CArchive& ar)
 	}
 
 	//파일에서 읽어서 저장
-	for (i = 0; i < ImageHeight; i++)
-		ar.Read(inputimg2[i], ImageWidth * depth);
+	if (!isbmp) {
+		for (i = 0; i < ImageHeight; i++)
+			ar.Read(inputimg2[i], ImageWidth * depth);
+	}
+	else {
+		BYTE nu[4];
+		int widthfile;
+
+		widthfile = (ImageWidth * 8 + 31) / 32 * 4;	//32(4의 배수) - 1 = 31
+
+		for (i = 0; i < ImageHeight; i++) {
+			if (depth == 1)
+				ar.Read(inputimg2[ImageHeight - 1 - i], ImageWidth * depth);	//뒤집어서 (밑부터)
+			else {
+				for (int j = 0; j < ImageWidth; j++) {
+					BYTE b, g, r;
+					ar.Read(&b, 1);
+					ar.Read(&g, 1);
+					ar.Read(&r, 1);
+					inputimg2[ImageHeight - 1 - i][3 * j + 0] = r;
+					inputimg2[ImageHeight - 1 - i][3 * j + 1] = g;
+					inputimg2[ImageHeight - 1 - i][3 * j + 2] = b;
+				}
+			}
+
+			if (widthfile - ImageWidth != 0) {
+				ar.Read(nu, (widthfile - ImageWidth) * depth);
+			}
+		}
+	}
 
 	return;
 }
