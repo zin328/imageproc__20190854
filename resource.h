@@ -8,7 +8,12 @@
 #define IDR_imageproc20190854TYPE       130
 #define ID_WINDOW_MANAGER               131
 #define IDD_DIALOG1                     310
+#define IDD_DIALOG2                     313
 #define IDC_EDIT_ANGLE                  1003
+#define IDC_BUTTON_FILE_SELECT          1004
+#define IDC_BUTTON_MOVIE                1005
+#define IDC_BUTTON3                     1006
+#define IDC_BUTTON_CAMERA               1006
 #define ID_32771                        32771
 #define ID_MENUTEST                     32772
 #define ID_32773                        32773
@@ -102,14 +107,16 @@
 #define ID_AVI32861                     32861
 #define ID_AVI_VIEW                     32862
 #define ID_GEOMETRY_MORPHING            32863
+#define ID_OPENCV                       32864
+#define ID_OPENCV_VIEW                  32865
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        313
-#define _APS_NEXT_COMMAND_VALUE         32864
-#define _APS_NEXT_CONTROL_VALUE         1004
+#define _APS_NEXT_RESOURCE_VALUE        315
+#define _APS_NEXT_COMMAND_VALUE         32866
+#define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
 #endif

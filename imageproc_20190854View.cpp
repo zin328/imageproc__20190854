@@ -65,6 +65,7 @@ ON_WM_LBUTTONDOWN()
 ON_WM_LBUTTONUP()
 ON_COMMAND(ID_AVI_VIEW, &Cimageproc20190854View::OnAviView)
 ON_COMMAND(ID_GEOMETRY_MORPHING, &Cimageproc20190854View::OnGeometryMorphing)
+ON_COMMAND(ID_OPENCV_VIEW, &Cimageproc20190854View::OnOpencvView)
 END_MESSAGE_MAP()
 
 // Cimageproc20190854View 생성/소멸
@@ -489,7 +490,7 @@ void Cimageproc20190854View::OnPixelbinarization()
 	Cimageproc20190854Doc* pDoc = GetDocument();
 
 	int i, x, y;
-	int threshold = 100;
+	int threshold = 150;
 	for (y = 0; y < pDoc->ImageHeight; y++)
 		for (x = 0; x <pDoc->ImageWidth; x++)
 		{
@@ -2063,4 +2064,11 @@ void Cimageproc20190854View::OnGeometryZoomoutSubsampling()
 		AVIFileExit();
 	}
 
+
+
+	void Cimageproc20190854View::OnOpencvView()
+	{
+		// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	}
+	//COpenCVDig 메시지 처리기
 	

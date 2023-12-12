@@ -85,6 +85,7 @@ public:
 	CString AviFileName;
 	void LoadAviFile(CDC* PDC);
 	afx_msg void OnGeometryMorphing();
+	afx_msg void OnOpencvView();
 };
 
 #ifndef _DEBUG  // imageproc_20190854View.cpp의 디버그 버전
