@@ -35,6 +35,7 @@ Cimageproc20190854Doc::Cimageproc20190854Doc() noexcept
 	resultimg = NULL;
 
 	gresultimg = NULL;
+	
 	// TODO: 여기에 일회성 생성 코드를 추가합니다.
 
 }
